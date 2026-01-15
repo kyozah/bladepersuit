@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+<<<<<<< Updated upstream
 /// <summary>
 /// Đặt trên các "spawn block" trong map
 /// Khi player tiếp cận, sẽ spawn quái lần lượt (không spawn toàn bộ cùng lúc)
@@ -73,10 +74,73 @@ public class EnemySpawner : MonoBehaviour
 
         if (showDebugInfo)
             Debug.Log($"✅ [Spawner] All enemies spawned!");
+=======
+public class EnemySpawner : MonoBehaviour
+{
+    public GameObject enemyPrefab;
+    public int maxEnemies = 10;
+    public int totalWaves = 3;
+    public int enemiesPerWave = 3;
+    public float waveDelay = 2f;
+    public Vector3 triggerSize = new Vector3(10f, 5f, 10f);
+
+    private bool playerInRange = false;
+    private int currentWave = 0;
+    private int enemiesSpawned = 0;
+    private int enemiesAlive = 0;
+    private Coroutine spawnCoroutine;
+
+    void Start()
+    {
+        BoxCollider trigger = gameObject.AddComponent<BoxCollider>();
+        trigger.isTrigger = true;
+        trigger.size = triggerSize;
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player") && !playerInRange)
+        {
+            playerInRange = true;
+            StartSpawning();
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = false;
+        }
+    }
+
+    void StartSpawning()
+    {
+        if (spawnCoroutine != null) return;
+        spawnCoroutine = StartCoroutine(SpawnWaves());
+    }
+
+    IEnumerator SpawnWaves()
+    {
+        while (currentWave < totalWaves && enemiesSpawned < maxEnemies)
+        {
+            int toSpawn = Mathf.Min(enemiesPerWave, maxEnemies - enemiesSpawned);
+            for (int i = 0; i < toSpawn; i++)
+            {
+                SpawnEnemy();
+                yield return new WaitForSeconds(0.5f);
+            }
+            currentWave++;
+            enemiesSpawned += toSpawn;
+            if (currentWave < totalWaves)
+                yield return new WaitForSeconds(waveDelay);
+        }
+>>>>>>> Stashed changes
     }
 
     void SpawnEnemy()
     {
+<<<<<<< Updated upstream
         if (enemyPrefab == null)
         {
             Debug.LogError("❌ Enemy prefab not assigned!");
@@ -108,10 +172,34 @@ public class EnemySpawner : MonoBehaviour
     Transform FindPlayer()
     {
         return GameObject.FindWithTag("Player")?.transform;
+=======
+        Vector3 pos = transform.position;
+        pos.y += 5f;
+        GameObject enemy = Instantiate(enemyPrefab, pos, Quaternion.identity);
+
+        Rigidbody rb = enemy.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.useGravity = true;
+            rb.isKinematic = false;
+        }
+
+        enemiesAlive++;
+        Enemy e = enemy.GetComponent<Enemy>();
+        if (e != null) e.OnDeath += () => enemiesAlive--;
+        EnemyAI ai = enemy.GetComponent<EnemyAI>();
+        if (ai != null) ai.spawner = this;
+    }
+
+    public void NotifyEnemyDeath()
+    {
+        enemiesAlive--;
+>>>>>>> Stashed changes
     }
 
     void OnDrawGizmos()
     {
+<<<<<<< Updated upstream
         // Vẽ activation distance
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, activationDistance);
@@ -146,3 +234,9 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 }
+=======
+        Gizmos.color = playerInRange ? Color.red : Color.green;
+        Gizmos.DrawWireCube(transform.position, triggerSize);
+    }
+}
+>>>>>>> Stashed changes

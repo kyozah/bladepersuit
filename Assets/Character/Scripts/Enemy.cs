@@ -29,15 +29,24 @@ public class Enemy : MonoBehaviour
     public bool showDebugInfo = false;
     public bool debugAI = false;
 
+<<<<<<< Updated upstream
     // Public references for AI
     public Rigidbody rb { get; private set; }
     public Animator animator { get; private set; }
 
     public bool isKnockedBack = false;
+=======
+    public delegate void DeathEvent();
+    public event DeathEvent OnDeath;
+
+    private Rigidbody rb;
+    protected Animator animator;
+    private bool isKnockedBack = false;
+>>>>>>> Stashed changes
     private float originalDrag;
     private Coroutine knockbackCoroutine;
 
-    void Start()
+    protected virtual void Start()
     {
         currentHealth = maxHealth;
         rb = GetComponent<Rigidbody>();
@@ -214,9 +223,12 @@ public class Enemy : MonoBehaviour
         knockbackCoroutine = null;
     }
 
-    void Die()
+    protected virtual void Die()
     {
         Debug.Log($"💀 {gameObject.name} died");
+
+        // Gọi event
+        OnDeath?.Invoke();
 
         if (animator != null)
         {
