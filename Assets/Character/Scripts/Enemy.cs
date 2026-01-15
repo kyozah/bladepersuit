@@ -6,6 +6,7 @@ public class Enemy : MonoBehaviour
     [Header("Stats")]
     public float maxHealth = 100f;
     private float currentHealth;
+    private int hitCount = 0;
 
     [Header("Knockback - Velocity Based")]
     [Tooltip("Lực knockback (m/s)")]
@@ -26,10 +27,13 @@ public class Enemy : MonoBehaviour
 
     [Header("Debug")]
     public bool showDebugInfo = false;
+    public bool debugAI = false;
 
-    private Rigidbody rb;
-    private Animator animator;
-    private bool isKnockedBack = false;
+    // Public references for AI
+    public Rigidbody rb { get; private set; }
+    public Animator animator { get; private set; }
+
+    public bool isKnockedBack = false;
     private float originalDrag;
     private Coroutine knockbackCoroutine;
 
@@ -46,6 +50,9 @@ public class Enemy : MonoBehaviour
         }
 
         originalDrag = rb.linearDamping;
+
+        // Register với AttackManager
+        EnemyAttackManager.RegisterEnemy(this);
 
         if (showDebugInfo)
         {
@@ -80,6 +87,7 @@ public class Enemy : MonoBehaviour
 
         // Trừ máu
         currentHealth -= damage;
+        hitCount++;
 
         // Animation
         if (animator != null)
@@ -220,6 +228,9 @@ public class Enemy : MonoBehaviour
             StopCoroutine(knockbackCoroutine);
         }
 
+        // Unregister từ AttackManager
+        EnemyAttackManager.UnregisterEnemy(this);
+
         StopAllCoroutines();
         Destroy(gameObject, 2f);
     }
@@ -227,5 +238,15 @@ public class Enemy : MonoBehaviour
     public bool IsKnockedBack()
     {
         return isKnockedBack;
+    }
+
+    public int GetHitCount()
+    {
+        return hitCount;
+    }
+
+    public void ResetHitCount()
+    {
+        hitCount = 0;
     }
 }
