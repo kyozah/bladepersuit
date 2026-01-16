@@ -7,6 +7,13 @@ public class Enemy : MonoBehaviour
     public float maxHealth = 100f;
     private float currentHealth;
 
+    [Header("AI Settings")]
+    public float detectionRange = 15f;
+    public float attackRange = 2f;
+    public float retreatDistance = 5f;
+    public float moveSpeed = 5f;
+    public float attackDelay = 1f; // Thời gian chuẩn bị attack
+
     [Header("Knockback - Velocity Based")]
     [Tooltip("Lực knockback (m/s)")]
     public float knockbackForce = 10f;
@@ -33,6 +40,17 @@ public class Enemy : MonoBehaviour
     private float originalDrag;
     private Coroutine knockbackCoroutine;
 
+    // AI variables
+    private EnemyManager manager;
+    private Transform player;
+    private enum AIState { Idle, Chase, Attack, Retreat }
+    private AIState currentState = AIState.Idle;
+    private Vector3 retreatPosition;
+    private float lastActionTime = 0f;
+    private bool isAttacking = false;
+    private Vector3 moveTarget;
+    private bool shouldMove = false;
+
     void Start()
     {
         currentHealth = maxHealth;
@@ -54,6 +72,13 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        if (isKnockedBack || isAttacking) return;
+
+        UpdateAI();
+    }
+
     void FixedUpdate()
     {
         // Đảm bảo Rigidbody không bị sleep
@@ -61,6 +86,112 @@ public class Enemy : MonoBehaviour
         {
             rb.WakeUp();
         }
+
+        // AI Movement
+        if (shouldMove && !isKnockedBack && !isAttacking)
+        {
+            MoveTowards(moveTarget);
+        }
+    }
+
+    void UpdateAI()
+    {
+        if (manager == null || player == null) return;
+
+        if (Time.time - lastActionTime < 3f) return; // Delay 3s
+
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+
+        switch (currentState)
+        {
+            case AIState.Idle:
+                if (manager.IsPlayerInZone() && distanceToPlayer <= detectionRange)
+                {
+                    currentState = AIState.Chase;
+                    lastActionTime = Time.time;
+                }
+                break;
+
+            case AIState.Chase:
+                if (distanceToPlayer <= attackRange)
+                {
+                    if (manager.CanAttack(this))
+                    {
+                        StartAttack();
+                        lastActionTime = Time.time;
+                    }
+                }
+                else
+                {
+                    moveTarget = player.position;
+                    shouldMove = true;
+                }
+                break;
+
+            case AIState.Attack:
+                // Attack logic handled in coroutine
+                break;
+
+            case AIState.Retreat:
+                if (Vector3.Distance(transform.position, retreatPosition) < 1f)
+                {
+                    currentState = AIState.Idle;
+                    lastActionTime = Time.time;
+                    shouldMove = false;
+                }
+                else
+                {
+                    moveTarget = retreatPosition;
+                    shouldMove = true;
+                }
+                break;
+        }
+    }
+
+    void MoveTowards(Vector3 target)
+    {
+        Vector3 direction = (target - transform.position).normalized;
+        rb.MovePosition(transform.position + direction * moveSpeed * Time.fixedDeltaTime);
+        if (player != null)
+        {
+            transform.LookAt(player.position);
+        }
+    }
+
+    void StartAttack()
+    {
+        currentState = AIState.Attack;
+        isAttacking = true;
+        manager.StartAttack(this);
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
+        }
+
+        StartCoroutine(PerformAttack());
+    }
+
+    IEnumerator PerformAttack()
+    {
+        yield return new WaitForSeconds(attackDelay);
+
+        // Attack logic: damage player
+        if (player != null)
+        {
+            PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(5f, transform.position);
+                Debug.Log("Enemy attacked player for 5 damage");
+            }
+        }
+
+        // After attack, retreat
+        retreatPosition = transform.position + (transform.position - player.position).normalized * retreatDistance;
+        currentState = AIState.Retreat;
+        isAttacking = false;
+        manager.EndAttack(this);
     }
 
     // ✅ THÊM overload để nhận player forward direction
@@ -210,6 +341,11 @@ public class Enemy : MonoBehaviour
     {
         Debug.Log($"💀 {gameObject.name} died");
 
+        if (manager != null)
+        {
+            manager.RemoveEnemy(this);
+        }
+
         if (animator != null)
         {
             animator.SetTrigger("Death");
@@ -224,8 +360,9 @@ public class Enemy : MonoBehaviour
         Destroy(gameObject, 2f);
     }
 
-    public bool IsKnockedBack()
+    public void SetManager(EnemyManager mgr)
     {
-        return isKnockedBack;
+        manager = mgr;
+        player = mgr.GetPlayer();
     }
 }
