@@ -92,7 +92,11 @@ public class Enemy : MonoBehaviour
         {
             MoveTowards(moveTarget);
         }
-    }
+        if (animator != null)
+{
+    animator.SetBool("IsMoving", shouldMove && !isAttacking && !isKnockedBack);
+}   
+ }
 
     void UpdateAI()
     {
