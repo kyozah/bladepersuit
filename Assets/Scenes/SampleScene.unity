@@ -25257,7 +25257,7 @@ MonoBehaviour:
   maxEnemies: 2
   spawnRadius: 10
   spawnHeight: 0
-  attackCooldown: 3
+  attackCooldown: 2
 --- !u!4 &372027764
 Transform:
   m_ObjectHideFlags: 0
