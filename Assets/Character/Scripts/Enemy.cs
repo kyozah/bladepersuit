@@ -63,12 +63,20 @@ public class Enemy : MonoBehaviour
             return;
         }
 
+        // ✅ ENSURE PROPER RIGIDBODY SETUP
+        rb.useGravity = true;
+        rb.isKinematic = false;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        
         originalDrag = rb.linearDamping;
 
         if (showDebugInfo)
         {
             Debug.Log($"🟢 Enemy '{gameObject.name}' initialized");
             Debug.Log($"  Use Player Forward Direction: {usePlayerForwardDirection}");
+            Debug.Log($"  Gravity enabled: {rb.useGravity}");
+            Debug.Log($"  Is Kinematic: {rb.isKinematic}");
         }
     }
 
@@ -286,18 +294,19 @@ public class Enemy : MonoBehaviour
         // Wake up rigidbody
         rb.WakeUp();
 
-        Vector3 knockbackVelocity = direction * knockbackForce;
-        knockbackVelocity.y = knockbackUpwardForce;
-
+        // Use AddForce to allow gravity to work naturally
+        Vector3 knockbackForceVector = direction * knockbackForce;
+        
         if (showDebugInfo)
         {
-            Debug.Log($"⚡ Knockback velocity: {knockbackVelocity}");
+            Debug.Log($"⚡ Knockback force: {knockbackForceVector}");
             Debug.Log($"  Direction: {direction}");
             Debug.Log($"  Force: {knockbackForce} m/s");
         }
 
-        // Set velocity
-        rb.linearVelocity = knockbackVelocity;
+        // Apply knockback force and upward force separately
+        rb.linearVelocity = new Vector3(knockbackForceVector.x, rb.linearVelocity.y, knockbackForceVector.z);
+        rb.AddForce(Vector3.up * knockbackUpwardForce, ForceMode.VelocityChange);
         rb.linearDamping = knockbackDrag;
 
         isKnockedBack = true;
