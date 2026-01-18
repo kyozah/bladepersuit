@@ -25257,7 +25257,7 @@ MonoBehaviour:
   maxEnemies: 2
   spawnRadius: 10
   spawnHeight: 0
-  attackCooldown: 3
+  attackCooldown: 2
 --- !u!4 &372027764
 Transform:
   m_ObjectHideFlags: 0
@@ -25267,7 +25267,7 @@ Transform:
   m_GameObject: {fileID: 372027761}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 776.8136, y: 406.6, z: 291.12}
+  m_LocalPosition: {x: 776.8136, y: 402.14, z: 291.12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
